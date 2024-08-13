@@ -17,11 +17,17 @@ class QuizController extends Controller
             'duration' => ['required', 'numeric']
         ]);
 
+        $user = Auth::guard('api')->user();
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Invalid input',
                 'errors' => $validator->errors()
             ], 422);
+        }
+        if ($user->level != ('techer'||'admin')) {
+            return response()->json([
+                'message' => 'You not have any permison'
+            ], 403);
         }
         $quiz = new Quiz();
         $quiz->title = $request->title;
