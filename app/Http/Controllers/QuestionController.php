@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Answer;
 use App\Models\Choice;
 use App\Models\DetailQuiz;
+use App\Models\HistoryQuiz;
 use App\Models\Question;
 use App\Models\Quiz;
 use Carbon\Carbon;
@@ -65,19 +66,29 @@ class QuestionController extends Controller
     public function get($id_quiz,$id_question){
         $question = Question::where('id',$id_question)->with('choices')->first();
         $detail = DetailQuiz::where('id_quiz',$id_quiz)->where('id_question', $id_question)->get();
+        $user = Auth::guard('api')->user();
+        $history = HistoryQuiz::where('id_user', $user->id)->where('id_quiz',$id_quiz)->first();
         if (!$detail || !$question) {
             return response()->json([
                 'message' => 'Question not found'
             ], 404);
         }
+        if ($history) {
+            return response()->json([
+                'message' => 'Quizz has been filled'
+            ], 403);
+        }
+
         return response()->json([
             'message' => 'Get question '.$question->text_question.' success',
             'question' => $question
         ], 200);
     }
+
     public function answer(Request $request, $id_quiz,$id_question){
         $detail = DetailQuiz::where('id_quiz', $id_quiz)->where('id_question',$id_question)->first();
         $user = Auth::guard('api')->user();
+        $history = HistoryQuiz::where('id_user', $user->id)->where('id_quiz',$id_quiz)->first();
         $validator = Validator::make($request->all(),[
             'id_choice' => 'required'
         ]);
@@ -91,6 +102,11 @@ class QuestionController extends Controller
             return response()->json([
                 'message' => 'Quizz or question not found'
             ], 404);
+        }
+        if ($history) {
+            return response()->json([
+                'message' => 'Quizz has been filled'
+            ], 403);
         }
         $choice = Choice::find($request->id_choice);
         $answer = new Answer();

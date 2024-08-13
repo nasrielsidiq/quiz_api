@@ -28,7 +28,7 @@ class AuthController extends Controller
                 'message' => 'Email or password incorrect',
             ],401);
         }
-        $user = User::where('username', $request->username)->get();
+        $user = User::where('username', $request->username)->first();
         return response()->json([
             'message' => 'Login success',
             'token' => $token,
@@ -43,5 +43,39 @@ class AuthController extends Controller
                 'message' => 'Logout success'
             ],200);
         }
+    }
+    public function register(Request $request){
+        $validator = Validator::make($request->all(),[
+            'name' => 'required',
+            'username' => ['required', 'unique:users'],
+            'password' => ['required', 'min:6']
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Invalid input',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        $user = new User();
+        $user->name = $request->name;
+        $user->username = $request->username;
+        $user->password = bcrypt($request->password);
+        $user->level = 'siswa';
+        $user->save();
+
+        $credential = $request->only('username','password');
+
+        if (!$token = Auth::guard('api')->attempt($credential)) {
+            return response()->json([
+                'message' => 'Username or password inccorect'
+            ], 401);
+        }
+
+        return response()->json([
+            'message' => 'Register success',
+            'token' => $token,
+            'user' => $user
+        ],200  );
     }
 }

@@ -18,6 +18,12 @@ class HistoryController extends Controller
                 'message' => 'Quiz not found'
             ], 404);
         }
+        $history = HistoryQuiz::where('id_user',$user->id)->where('id_quiz',$id_quiz)->first();
+        if ($history){
+            return response()->json([
+                'message' => 'Quiz has been filled'
+            ], 403);
+        }
         $true_answer = count($quiz);
         $length_question = count(DetailQuiz::where('id_quiz',$id_quiz)->get());
 
